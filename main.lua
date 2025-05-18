@@ -47,13 +47,15 @@ function Setup.write_in_documents(self)
 	print("")
 end
 
+-- Print the value of each option unordered (mainly for debugging)
 function Setup.show_opts_values(self)
 	for key, value in pairs(self.options) do
 		print(key .. " = " .. value)
 	end
 end
 
-function Setup.init (self)
+-- Entry point to call subsequent functions to perform each necessary step.
+function Setup.init(self)
 	self.parse_args(self)
 	self.show_opts_values(self)
 end
