@@ -2,12 +2,12 @@ local Setup = {
 	-- Note: Due to how options are parsed, any new option added must be a string of exactly 3 or 4 characters long.
 	options = { name = "", rte = "", lng = "", lic = "", dcs = "" },
 	default_values = { name = "project", rte = "./", lng = "lua", lic = "mit", dcs = "all" },
-	documents = { readme = "README.md", license = "LICENSE", ignore = ".gitignore" },
-	languages = { python = "py", lua = "lua", cpp = "cpp", markdown = "md", java = "java", javascript = "js"},
+	languages = { python = "py", lua = "lua", cpp = "cpp", markdown = "md", java = "java", javascript = "js" },
 	licenses = {mit = "MIT", gpl = "GPL", apache = "APACHE" },
+	documents = { readme = "README.md", license = "LICENSE", ignore = ".gitignore", all = "all" },
 }
 
--- Read the command line options and parse them to get their values
+-- Parses command-line arguments to extract options and their respective values.
 function Setup.parse_args(self)
 	for i = 1, #arg do
 		local option = arg[i]
@@ -25,7 +25,7 @@ function Setup.parse_args(self)
 	end
 end
 
--- Check if a string is empty or blank (spaces, tabs, new lines, etc)
+-- Checks if a string is empty or consists only of whitespace characters.
 function Setup.is_string_empty_blank(self, str)
 	if str == nil or str == "" then
 		return true
@@ -37,30 +37,56 @@ function Setup.is_string_empty_blank(self, str)
 	return false
 end
 
--- Check the value of each option, if it's empty or blank set it a default value
+-- Validates if a given value is recognized as valid anywhere across the defined tables.
+-- Warning: This check does NOT ensure the value is appropriate for the specific option it's assigned to.
+-- Example: "--lng=all" passes if "all" is a globally valid value, even if "--lng" specifically expects a language code.
+function Setup.is_value_allowed(self, value)
+	for lng, _ in pairs(self.languages) do
+		if lng == value then
+			return true
+		end
+	end
+	for lic, _ in pairs(self.licenses) do
+		if lic == value then
+			return true
+		end
+	end
+	for doc, _ in pairs(self.documents) do
+		if doc == value then
+			return true
+		end
+	end
+	return false
+end
+
+-- Validates each option's value and assigns a default if it's missing or invalid.
 function Setup.check_opts_values(self)
 	for key, value in pairs(self.options) do
 		if self.is_string_empty_blank(self, value) then
 			self.options[key] = self.default_values[key]
+		elseif key ~= "name" and key ~= "rte" then
+			if not self.is_value_allowed(self, value) then
+				self.options[key] = self.default_values[key]
+			end
 		end
 	end
 end
 
--- Create the documents according to the parsed options
 function Setup.create_base_documents(self)
 	print("")
 end
 
--- Modify the created documents according to the parsed options
 function Setup.write_in_documents(self)
 	print("")
 end
 
--- Print the value of each option unordered (mainly for debugging)
+-- Prints the value of each option (mainly for debugging).
 function Setup.show_opts_values(self)
+	print("\n")
 	for key, value in pairs(self.options) do
 		print(key .. " = " .. value)
 	end
+	print("\n")
 end
 
 -- Entry point to call subsequent functions to perform each necessary step.
