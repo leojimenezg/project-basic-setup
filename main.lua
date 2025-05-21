@@ -72,6 +72,22 @@ function Setup.check_opts_values(self)
 	end
 end
 
+-- Establishes the primary directory for the new project based on the provided path and name.
+-- Warning: This function's directory creation logic is specifically designed for Unix-like operating systems.
+function Setup.create_project_dir(self)
+	local base_path = self.options["rte"]
+	local project_name = self.options["name"]
+	local full_path = ""
+	if string.sub(base_path, -1, -1) == "/" then
+		full_path = base_path .. project_name
+	else
+		full_path = base_path .. "/" .. project_name
+	end
+	-- Quotes are used to properly handle paths containing spaces.
+	local command = 'mkdir -p "' .. full_path .. '"'
+	os.execute(command)
+end
+
 function Setup.create_base_documents(self)
 	print("")
 end
@@ -94,6 +110,7 @@ function Setup.init(self)
 	self.parse_args(self)
 	self.check_opts_values(self)
 	self.show_opts_values(self)
+	self.create_project_dir(self)
 end
 
 
