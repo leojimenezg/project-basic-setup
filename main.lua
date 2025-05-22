@@ -2,8 +2,8 @@ local Setup = {
 	-- Note: Due to how options are parsed, any new option added must be a string of exactly 3 or 4 characters long.
 	options = { name = "", rte = "", lng = "", lic = "", dcs = "" },
 	default_values = { name = "project", rte = "./", lng = "lua", lic = "mit", dcs = "all" },
-	languages = { python = "py", lua = "lua", cpp = "cpp", markdown = "md", java = "java", javascript = "js" },
-	licenses = {mit = "MIT", gpl = "GPL", apache = "APACHE" },
+	languages = { python = "py", lua = "lua", cpp = "cpp", java = "java", javascript = "js" },
+	licenses = { mit = "MIT", apache = "APACHE" },
 	documents = { readme = "README.md", license = "LICENSE", ignore = ".gitignore", all = "all" },
 }
 
@@ -23,6 +23,7 @@ function Setup.parse_args(self)
 			end
 		end
 	end
+	return true
 end
 
 -- Checks if a string is empty or consists only of whitespace characters.
@@ -70,11 +71,12 @@ function Setup.check_opts_values(self)
 			end
 		end
 	end
+	return true
 end
 
--- Establishes the primary directory for the new project based on the provided path and name.
+-- Creates the full path based on the provided path and name.
 -- Warning: This function's directory creation logic is specifically designed for Unix-like operating systems.
-function Setup.create_project_dir(self)
+function Setup.create_project_path(self)
 	local base_path = self.options["rte"]
 	local project_name = self.options["name"]
 	local full_path = ""
@@ -83,13 +85,54 @@ function Setup.create_project_dir(self)
 	else
 		full_path = base_path .. "/" .. project_name
 	end
-	-- Quotes are used to properly handle paths containing spaces.
-	local command = 'mkdir -p "' .. full_path .. '"'
-	os.execute(command)
+	return full_path .. "/"
 end
 
-function Setup.create_base_documents(self)
-	print("")
+-- Establishes the primary directory for the new project.
+function Setup.create_project_dir(self)
+	local path = self.create_project_path(self)
+	-- Quotes are used to properly handle paths containing spaces.
+	local command = 'mkdir -p "' .. path .. '"'
+	os.execute(command)
+	return true
+end
+
+-- Generates core project documents based on the provided configurations.
+-- This process executes in three distinct phases:
+-- 1. Primary File Creation: Creates a main source file. Creation is skipped if the language provided is not supported.
+-- 2. Single Document Creation: Creates a single, specified document. Creation is skipped if the document is not supported.
+-- 3. Complete File Creation: Creates all the supported project files, only if provided by the configuration.
+function Setup.create_project_docs(self)
+	local path = self.create_project_path(self)
+	local full_path = ""
+	local command = ""
+	local main_ext = self.languages[self.options["lng"]]
+	if main_ext then
+		local main_file = "main." .. main_ext
+		full_path = path .. main_file
+		command = 'touch "' .. full_path .. '"'
+		os.execute(command)
+	end
+	local document = self.options["dcs"]
+	if document ~= "all" then
+		local file = self.documents[document]
+		if file then
+			full_path = path .. file
+			command = 'touch "' .. full_path .. '"'
+			os.execute(command)
+			return true
+		else
+			return false
+		end
+	end
+	for key, value in pairs(self.documents) do
+		if key ~= "all" then
+			full_path = path .. value
+			command = 'touch "' .. full_path .. '"'
+			os.execute(command)
+		end
+	end
+	return true
 end
 
 function Setup.write_in_documents(self)
@@ -111,6 +154,7 @@ function Setup.init(self)
 	self.check_opts_values(self)
 	self.show_opts_values(self)
 	self.create_project_dir(self)
+	self.create_project_docs(self)
 end
 
 
