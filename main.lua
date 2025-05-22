@@ -97,6 +97,34 @@ function Setup.create_project_dir(self)
 	return true
 end
 
+function Setup.get_template_content(self, template_name)
+	local template_path = "./templates/" .. template_name .. ".txt"
+	local template = io.open(template_path, "r")
+	if template ~= nil then
+		local content = {}
+		for line in template:lines() do
+			table.insert(content, line)
+		end
+		template:close()
+		return content
+	end
+	return nil
+end
+
+function Setup.create_and_write_file(self, file_path, file_name)
+	local command = ""
+	if file_name ~= "license" then
+		local template_content = self.get_template_content(self, file_name)
+		local file = io.open(file_path, "w")
+		for i = 1, #template_content do
+			file:write(template_content[i])
+			file:write("\n")
+		end
+		return true
+	end
+	return false
+end
+
 -- Generates core project documents based on the provided configurations.
 -- This process executes in three distinct phases:
 -- 1. Primary File Creation: Creates a main source file. Creation is skipped if the language provided is not supported.
@@ -105,12 +133,11 @@ end
 function Setup.create_project_docs(self)
 	local path = self.create_project_path(self)
 	local full_path = ""
-	local command = ""
 	local main_ext = self.languages[self.options["lng"]]
 	if main_ext then
 		local main_file = "main." .. main_ext
 		full_path = path .. main_file
-		command = 'touch "' .. full_path .. '"'
+		local command = 'touch "' .. full_path .. '"'
 		os.execute(command)
 	end
 	local document = self.options["dcs"]
@@ -118,8 +145,7 @@ function Setup.create_project_docs(self)
 		local file = self.documents[document]
 		if file then
 			full_path = path .. file
-			command = 'touch "' .. full_path .. '"'
-			os.execute(command)
+			self.create_and_write_file(self, full_path, document)
 			return true
 		else
 			return false
@@ -128,15 +154,10 @@ function Setup.create_project_docs(self)
 	for key, value in pairs(self.documents) do
 		if key ~= "all" then
 			full_path = path .. value
-			command = 'touch "' .. full_path .. '"'
-			os.execute(command)
+			self.create_and_write_file(self, full_path, key)
 		end
 	end
 	return true
-end
-
-function Setup.write_in_documents(self)
-	print("")
 end
 
 -- Prints the value of each option (mainly for debugging).
