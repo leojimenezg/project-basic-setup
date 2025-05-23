@@ -1,5 +1,3 @@
--- TODO: Change the object usage notation. e.g. table.insert(file, line) -> file:insert(line) or string.sub(str, 1) -> str:sub(1)
-
 local Setup = {
 	-- Note: Due to how options are parsed, any new option added must be a string of exactly 3 or 4 characters long.
 	options = { name = "", rte = "", lng = "", lic = "", dcs = "" },
@@ -13,15 +11,15 @@ local Setup = {
 function Setup.parse_args(self)
 	for i = 1, #arg do
 		local option = arg[i]
-		local possible_opt = false
-		if string.sub(option, 1, 2) == "--" then
-			possible_opt = true
+		local is_possible_opt = false
+		if option:sub(1, 2) == "--" then
+			is_possible_opt = true
 		end
-		local symbol_idx = string.find(option, "=", 5, 7)
-		if possible_opt and symbol_idx then
-			local key = string.sub(option, 3, symbol_idx - 1)
-			if self.options[key] then
-				self.options[key] = string.sub(option, symbol_idx + 1, -1)
+		local value_indicator = option:find('=', 5, 7)
+		if is_possible_opt and value_indicator then
+			local option_name = option:sub(3, value_indicator - 1)
+			if self.options[option_name] then
+				self.options[option_name] = option:sub(value_indicator + 1, -1)
 			end
 		end
 	end
@@ -33,8 +31,8 @@ function Setup.is_string_empty_blank(self, str)
 	if str == nil or str == "" then
 		return true
 	end
-	local cleaned = string.gsub(str, "%s", "")
-	if string.len(cleaned) < 1 then
+	local clean_str = str:gsub("%s", "")
+	if clean_str:len() < 1 then
 		return true
 	end
 	return false
@@ -42,7 +40,7 @@ end
 
 -- Validates if a given value is recognized as valid anywhere across the defined tables.
 -- Warning: This check does NOT ensure the value is appropriate for the specific option it's assigned to.
--- Example: "--lng=all" passes if "all" is a globally valid value, even if "--lng" specifically expects a language code.
+-- Example: "--lng=all" passes if "all" is a globally valid value, even if "--lng" specifically expects a language name.
 function Setup.is_value_allowed(self, value)
 	for lng, _ in pairs(self.languages) do
 		if lng == value then
@@ -64,12 +62,12 @@ end
 
 -- Validates each option's value and assigns a default if it's missing or invalid.
 function Setup.check_opts_values(self)
-	for key, value in pairs(self.options) do
+	for option, value in pairs(self.options) do
 		if self.is_string_empty_blank(self, value) then
-			self.options[key] = self.default_values[key]
-		elseif key ~= "name" and key ~= "rte" then
+			self.options[option] = self.default_values[option]
+		elseif option ~= "name" and option ~= "rte" then
 			if not self.is_value_allowed(self, value) then
-				self.options[key] = self.default_values[key]
+				self.options[option] = self.default_values[option]
 			end
 		end
 	end
@@ -81,20 +79,20 @@ end
 function Setup.create_project_path(self)
 	local base_path = self.options["rte"]
 	local project_name = self.options["name"]
-	local full_path = ""
-	if string.sub(base_path, -1, -1) == "/" then
-		full_path = base_path .. project_name
+	local full_path
+	if base_path:sub(-1, -1) == '/' then
+		full_path = base_path .. project_name .. '/'
 	else
-		full_path = base_path .. "/" .. project_name
+		full_path = base_path .. '/' .. project_name .. '/'
 	end
-	return full_path .. "/"
+	return full_path
 end
 
 -- Establishes the primary directory for the new project.
 function Setup.create_project_dir(self)
-	local path = self.create_project_path(self)
+	local project_path = self.create_project_path(self)
 	-- Quotes are used to properly handle paths containing spaces.
-	local command = 'mkdir -p "' .. path .. '"'
+	local command = 'mkdir -p "' .. project_path .. '"'
 	os.execute(command)
 	return true
 end
@@ -106,8 +104,8 @@ function Setup.get_template_content(self, template_name)
 	if template ~= nil then
 		local content = {}
 		for line in template:lines() do
-			if string.find(line, "[project-name-placeholder]", 1, true) then
-				line = "# " .. string.gsub(self.options["name"], "[-_]", ' ')
+			if line:find("[project-name-placeholder]", 1, true) then
+				line = "# " .. self.options["name"]:gsub("[-_]", ' ')
 			end
 			table.insert(content, line)
 		end
@@ -121,7 +119,7 @@ end
 function Setup.create_and_write_file(self, file_path, file_name)
 	local template_content
 	if file_name == "license" then
-		local license_name = file_name .. "/" .. self.options["lic"]
+		local license_name = file_name .. '/' .. self.options["lic"]
 		template_content = self.get_template_content(self, license_name)
 	else
 		template_content = self.get_template_content(self, file_name)
@@ -141,29 +139,29 @@ end
 -- 3. Complete File Creation: Creates all the supported project files, only if provided by the configuration.
 function Setup.create_project_docs(self)
 	local path = self.create_project_path(self)
-	local full_path = ""
-	local main_ext = self.languages[self.options["lng"]]
-	if main_ext then
-		local main_file = "main." .. main_ext
+	local full_path
+	local main_file_language = self.languages[self.options["lng"]]
+	if main_file_language then
+		local main_file = "main." .. main_file_language
 		full_path = path .. main_file
 		local command = 'touch "' .. full_path .. '"'
 		os.execute(command)
 	end
-	local document = self.options["dcs"]
-	if document ~= "all" then
-		local file = self.documents[document]
-		if file then
-			full_path = path .. file
-			self.create_and_write_file(self, full_path, document)
+	local dcs_value = self.options["dcs"]
+	if dcs_value ~= "all" then
+		local document_name = self.documents[document]
+		if document_name then
+			full_path = path .. document_name
+			self.create_and_write_file(self, full_path, document_name)
 			return true
 		else
 			return false
 		end
 	end
-	for key, value in pairs(self.documents) do
-		if key ~= "all" then
-			full_path = path .. value
-			self.create_and_write_file(self, full_path, key)
+	for document, document_name in pairs(self.documents) do
+		if document ~= "all" then
+			full_path = path .. document_name
+			self.create_and_write_file(self, full_path, document)
 		end
 	end
 	return true
