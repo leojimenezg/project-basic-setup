@@ -1,3 +1,5 @@
+-- TODO: Change the object usage notation. e.g. table.insert(file, line) -> file:insert(line) or string.sub(str, 1) -> str:sub(1)
+
 local Setup = {
 	-- Note: Due to how options are parsed, any new option added must be a string of exactly 3 or 4 characters long.
 	options = { name = "", rte = "", lng = "", lic = "", dcs = "" },
@@ -97,12 +99,16 @@ function Setup.create_project_dir(self)
 	return true
 end
 
+-- Reads the content of the specified template file and returns its lines as a table.
 function Setup.get_template_content(self, template_name)
 	local template_path = "./templates/" .. template_name .. ".txt"
-	local template = io.open(template_path, "r")
+	local template = io.open(template_path, 'r')
 	if template ~= nil then
 		local content = {}
 		for line in template:lines() do
+			if string.find(line, "[project-name-placeholder]", 1, true) then
+				line = "# " .. string.gsub(self.options["name"], "[-_]", ' ')
+			end
 			table.insert(content, line)
 		end
 		template:close()
@@ -111,18 +117,21 @@ function Setup.get_template_content(self, template_name)
 	return nil
 end
 
+-- Generates and writes the specified file with the retrieved template content.
 function Setup.create_and_write_file(self, file_path, file_name)
-	local command = ""
-	if file_name ~= "license" then
-		local template_content = self.get_template_content(self, file_name)
-		local file = io.open(file_path, "w")
-		for i = 1, #template_content do
-			file:write(template_content[i])
-			file:write("\n")
-		end
-		return true
+	local template_content
+	if file_name == "license" then
+		local license_name = file_name .. "/" .. self.options["lic"]
+		template_content = self.get_template_content(self, license_name)
+	else
+		template_content = self.get_template_content(self, file_name)
 	end
-	return false
+	local file = io.open(file_path, "w")
+	for i = 1, #template_content do
+		file:write(template_content[i])
+		file:write("\n")
+	end
+	return true
 end
 
 -- Generates core project documents based on the provided configurations.
@@ -160,6 +169,7 @@ function Setup.create_project_docs(self)
 	return true
 end
 
+--[[
 -- Prints the value of each option (mainly for debugging).
 function Setup.show_opts_values(self)
 	print("\n")
@@ -168,16 +178,16 @@ function Setup.show_opts_values(self)
 	end
 	print("\n")
 end
+]]
 
 -- Entry point to call subsequent functions to perform each necessary step.
 function Setup.init(self)
 	self.parse_args(self)
 	self.check_opts_values(self)
-	self.show_opts_values(self)
 	self.create_project_dir(self)
 	self.create_project_docs(self)
+	print("Your Project Basic Setup is ready!")
 end
 
 
 Setup:init()
-
