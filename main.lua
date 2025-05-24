@@ -167,17 +167,6 @@ function Setup.create_project_docs(self)
 	return true
 end
 
---[[
--- Prints the value of each option (mainly for debugging).
-function Setup.show_opts_values(self)
-	print("\n")
-	for key, value in pairs(self.options) do
-		print(key .. " = " .. value)
-	end
-	print("\n")
-end
-]]
-
 -- Entry point to call subsequent functions to perform each necessary step.
 function Setup.init(self)
 	self.parse_args(self)
