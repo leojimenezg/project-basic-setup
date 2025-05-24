@@ -22,7 +22,7 @@ Open your prefered terminal and clone the project to your local machine.
     cd project-basic-setup
     ```
 3. **Run the Application**
-Finally, execute the main script to launch the Find and Replace Txt Program.
+Finally, execute the main script to launch the Project Basic Setup Program.
     ```bash
     lua main.lua --name=my-project --rte=./ --lng=lua --lic=mit --dcs=all
     ```
