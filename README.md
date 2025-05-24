@@ -6,6 +6,27 @@ A Lua script designed to automate and streamline new project setup, quickly gene
 
 ## Installation
 
+To get this project up and runnig on your local machine, follow the next instructions.
+
+### Prerequisites
+Before anything else, make sure you have installed **Lua 5.x.x** or a newer version in your system.
+
+### Steps
+1. **Clone the repository:**
+Open your prefered terminal and clone the project to your local machine.
+    ```bash
+    git clone https://github.com/LeoJimenezG/project-basic-setup.git
+    ```
+2. **Navigate into the project directory:**
+    ```bash
+    cd project-basic-setup
+    ```
+3. **Run the Application**
+Finally, execute the main script to launch the Find and Replace Txt Program.
+    ```bash
+    lua main.lua --name=my-project --rte=./ --lng=lua --lic=mit --dcs=all
+    ```
+
 ---
 
 ## How Does It Work?
@@ -26,8 +47,6 @@ To tailor the script's output to your specific needs, you'll work with **five di
 * `--name`: Sets your project's name. It supports spaces, hyphens (-), and underscores (_), but must be enclosed in quotes if it contains spaces.
     * Examples:
         ```bash
-        --name=my_project_name
-
         --name=my-project-name
 
         --name="my project name"
@@ -37,9 +56,7 @@ To tailor the script's output to your specific needs, you'll work with **five di
         ```bash
         --rte=./
 
-        --rte=users/user/documents/projects/
-
-        --rte=users/user/new_dir/other_dir/projects
+        --rte="users/my_user/new dir/other-dir/projects"
         ```
 * `--lng`: Defines the project's primary programming language. This only affects the creation of the main source file (e.g., main.py, main.cpp).
     * Examples:
@@ -58,8 +75,6 @@ To tailor the script's output to your specific needs, you'll work with **five di
 * `--dcs`: Determines which auxiliary documents to generate. You can specify a single document type or generate all supported types. These are template-based files, each with only one available template version, excepting the license.
     * Examples:
         ```bash
-        --dcs=license
-
         --dcs=ignore
 
         --dcs=all
@@ -86,11 +101,11 @@ To tailor the script's output to your specific needs, you'll work with **five di
 ### Default Option Values
 **Note:** These default values are applied automatically when an option is either not specified during script execution or provided with an unsupported value.
 
-* `--name`: **project**.
-* `--rte`: **./**.
-* `--lng`: **lua**.
-* `--lic`: **mit**.
-* `--dcs`: **all**.
+* `--name`: **project**
+* `--rte`: **./**
+* `--lng`: **lua**
+* `--lic`: **mit**
+* `--dcs`: **all**
 
 ---
 
