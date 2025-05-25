@@ -170,7 +170,17 @@ This section focuses exclusively on these areas, guiding you on how to extend or
 
 ## Notes
 
+* This project originated from my personal need to automate my own project creation process. While developed for specific needs, I've tried to design it to be as versatile as possible, aiming to support a wide range of similar scenarios for basic project setup.
+* This script is built on the principle of providing a simple yet fully functional project structure, ideal for straightforward setups. It doesn't aim to manage highly complex or deeply nested project architectures.
+* I've tested this project across various scenarios, and it performs as expected when used with its intended options and values. However, deviating significantly from its design may result in either a partially usable or a completely unworkable project setup. Therefore, ensure you use the script as intended.
+* Ironically, I didn't use this script to generate its own project structure, as it simply didn't exist yet! However, I definitely plan to use it for my future projects and will continue to improve it as needed.
+* **Tip**: Don't hesitate to refactor your code. Often, a clearer vision for your project emerges after the initial implementation, making a second pass highly beneficial.
+
 ---
 
 ## Useful Resources
 
+* [Lua Manual](https://www.lua.org/manual/5.4/manual.html) - The official and comprehensive reference manual for Lua 5.4.
+* [Lua Table Usage](https://www.lua.org/manual/5.4/manual.html#6.6) - Detailed information on `table` manipulation functions in the official manual.
+* [Lua String Usage](https://www.lua.org/manual/5.4/manual.html#6.4) - Comprehensive guide to `string` manipulation functions in the official manual.
+* [Lua File Usage](https://www.lua.org/manual/5.4/manual.html#6.8) - Documentation on the `io` library for file input/output operations in the official manual.
