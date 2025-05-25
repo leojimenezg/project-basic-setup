@@ -154,7 +154,7 @@ This section focuses exclusively on these areas, guiding you on how to extend or
         -- Inside "./templates" place your template file
         -- Example: "./templates/script.txt"
         ```
-### Licences Configuration
+### Licenses Configuration
 **Note:** All templates used for license generation must have the `.txt` extension and must be placed inside the `./templates/license` project directory.
 * The `licenses` table, found within the `Setup` object, allows you to easily add new project licenses for generation. Unlike the **Documents Configuration**, here the key for each new license **must be the exact template filename** (without its `.txt` extension), corresponding to the template file in your `/templates/license` directory. The assigned value (e.g., `"MIT"`, `"GPL"`) is typically used for internal referencing or display, as the generated license file will always be named `LICENSE`. Remember to place the corresponding template file inside the `./templates/license` project directory.
     * Example:
