@@ -1,6 +1,6 @@
 local Setup = {
 	-- Note: Due to how options are parsed, any new option added must be a string of exactly 3 or 4 characters long.
-	options = { name = "", rte = "", lng = "", lic = "", dcs = "" },
+	options = { nme = "", rte = "", lng = "", lic = "", dcs = "" },
 	default_values = { name = "project", rte = "./", lng = "lua", lic = "mit", dcs = "all" },
 	languages = { python = "py", lua = "lua", cpp = "cpp", java = "java", javascript = "js" },
 	licenses = { mit = "MIT", apache = "APACHE" },
@@ -9,17 +9,18 @@ local Setup = {
 
 -- Parses command-line arguments to extract options and their respective values.
 function Setup.parse_args(self)
+	-- Valid arg: --arg=value.
 	for i = 1, #arg do
 		local option = arg[i]
 		local is_possible_opt = false
 		if option:sub(1, 2) == "--" then
 			is_possible_opt = true
 		end
-		local value_indicator = option:find('=', 5, 7)
-		if is_possible_opt and value_indicator then
-			local option_name = option:sub(3, value_indicator - 1)
+		local indicator = option.sub(6, 6)
+		if is_possible_opt and indicator == '=' then
+			local option_name = option:sub(3, 5)
 			if self.options[option_name] then
-				self.options[option_name] = option:sub(value_indicator + 1, -1)
+				self.options[option_name] = option:sub(7, -1)
 			end
 		end
 	end
