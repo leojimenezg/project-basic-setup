@@ -1,4 +1,4 @@
-# [project-name-placeholder]
+# placeholder
 
 
 

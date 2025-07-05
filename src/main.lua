@@ -1,15 +1,30 @@
+ -- Checks if a string is empty or consists only of whitespace characters.
+local function is_string_empty_blank(str)
+	if str == nil or str == "" then
+		return true
+	end
+	local clean_str = str:gsub("%s", "")
+	if clean_str:len() < 1 then
+		return true
+	end
+	return false
+end
+
 local Setup = {
-	-- Note: Due to how options are parsed, any new option added must be a string of exactly 3 or 4 characters long.
+	-- Note: Due to how options are parsed, any new option added must be a string of exactly 3 characters long.
 	options = { nme = "", rte = "", lng = "", lic = "", dcs = "" },
-	default_values = { name = "project", rte = "./", lng = "lua", lic = "mit", dcs = "all" },
-	languages = { python = "py", lua = "lua", cpp = "cpp", java = "java", javascript = "js" },
-	licenses = { mit = "MIT", apache = "APACHE" },
+	default_values = { name = "new-project", rte = "./", lng = "lua", lic = "mit", dcs = "all" },
+	languages = { python = "py", lua = "lua", cpp = "cpp", c = "c", go = "go" },
+	licenses = { mit = "mit", apache = "apache" },
 	documents = { readme = "README.md", license = "LICENSE", ignore = ".gitignore", all = "all" },
 }
 
--- Parses command-line arguments to extract options and their respective values.
+--[[
+Parses command-line arguments to extract options and their respective values.
+The parsing of each argument is based on specific positions, considering that a
+valid argument has a total length of 6 characters: "--arg=", excluding its value.
+]]
 function Setup.parse_args(self)
-	-- Valid arg: --arg=value.
 	for i = 1, #arg do
 		local option = arg[i]
 		local is_possible_opt = false
@@ -27,21 +42,12 @@ function Setup.parse_args(self)
 	return true
 end
 
--- Checks if a string is empty or consists only of whitespace characters.
-function Setup.is_string_empty_blank(self, str)
-	if str == nil or str == "" then
-		return true
-	end
-	local clean_str = str:gsub("%s", "")
-	if clean_str:len() < 1 then
-		return true
-	end
-	return false
-end
-
--- Validates if a given value is recognized as valid anywhere across the defined tables.
--- Warning: This check does NOT ensure the value is appropriate for the specific option it's assigned to.
--- Example: "--lng=all" passes if "all" is a globally valid value, even if "--lng" specifically expects a language name.
+ --[[
+Validates if a given value is recognized as valid anywhere across the defined tables.
+Warning: This check does NOT ensure the value is appropriate for the specific option
+it's assigned to. Example: "--lng=all" passes if "all" is a globally valid value,
+even if "--lng" specifically expects a language name.
+]]
 function Setup.is_value_allowed(self, value)
 	for lng, _ in pairs(self.languages) do
 		if lng == value then
@@ -61,10 +67,14 @@ function Setup.is_value_allowed(self, value)
 	return false
 end
 
--- Validates each option's value and assigns a default if it's missing or invalid.
+--[[
+Goes through each option's value, validates if its a valid value using the
+"is_value_allowed" function. It assigns a default value to an option if
+its value is missing or invalid.
+--]]
 function Setup.check_opts_values(self)
 	for option, value in pairs(self.options) do
-		if self.is_string_empty_blank(self, value) then
+		if is_string_empty_blank(value) then
 			self.options[option] = self.default_values[option]
 		elseif option ~= "name" and option ~= "rte" then
 			if not self.is_value_allowed(self, value) then
@@ -75,8 +85,11 @@ function Setup.check_opts_values(self)
 	return true
 end
 
--- Creates the full path based on the provided path and name.
--- Warning: This function's directory creation logic is specifically designed for Unix-like operating systems.
+--[[
+Creates the full project path based on the provided path and name, and
+makes a format validation.
+Warning: This function is specifically designed for Unix-like OS.
+]]
 function Setup.create_project_path(self)
 	local base_path = self.options["rte"]
 	local project_name = self.options["name"]
@@ -89,7 +102,10 @@ function Setup.create_project_path(self)
 	return full_path
 end
 
--- Establishes the primary directory for the new project.
+--[[
+Creates the main project directory and all the project directories
+based on the created project path using "mkdir -p" command.
+]]
 function Setup.create_project_dir(self)
 	local project_path = self.create_project_path(self)
 	-- Quotes are used to properly handle paths containing spaces.
@@ -98,7 +114,10 @@ function Setup.create_project_dir(self)
 	return true
 end
 
--- Reads the content of the specified template file and returns its lines as a table.
+--[[
+Reads the content of the specified template file and returns its
+lines as a table. If it fails, returns nil.
+]]
 function Setup.get_template_content(self, template_name)
 	local template_path = "./templates/" .. template_name .. ".txt"
 	local template = io.open(template_path, 'r')
