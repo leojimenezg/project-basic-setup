@@ -1,4 +1,4 @@
- -- Checks if a string is empty or consists only of whitespace characters.
+-- Checks if a string is empty or consists only of whitespace characters.
 local function is_string_empty_blank(str)
 	if str == nil or str == "" then
 		return true
@@ -25,17 +25,18 @@ The parsing of each argument is based on specific positions, considering that a
 valid argument has a total length of 6 characters: "--arg=", excluding its value.
 ]]
 function Setup.parse_args(self)
+	if #arg < 1 then return false end
 	for i = 1, #arg do
-		local option = arg[i]
-		local is_possible_opt = false
-		if option:sub(1, 2) == "--" then
-			is_possible_opt = true
+		local full_arg = arg[i]
+		local is_possible = false
+		if full_arg:sub(1, 2) == "--" then
+			is_possible = true
 		end
-		local indicator = option.sub(6, 6)
-		if is_possible_opt and indicator == '=' then
-			local option_name = option:sub(3, 5)
-			if self.options[option_name] then
-				self.options[option_name] = option:sub(7, -1)
+		local value_indicator = full_arg:sub(6, 6)
+		if is_possible and value_indicator == '=' then
+			local arg_name = full_arg:sub(3, 5)
+			if self.options[arg_name] then
+				self.options[arg_name] = full_arg:sub(7, -1)
 			end
 		end
 	end
@@ -187,13 +188,22 @@ function Setup.create_project_docs(self)
 	return true
 end
 
+function Setup.show_options(self)
+	for key, value in pairs(self.options) do
+		print(key .. " -> " .. value)
+	end
+end
+
 -- Entry point to call subsequent functions to perform each necessary step.
 function Setup.init(self)
-	self.parse_args(self)
+	self:parse_args()
+	self:show_options()
+	--[[
 	self.check_opts_values(self)
 	self.create_project_dir(self)
 	self.create_project_docs(self)
 	print("Your Project Basic Setup is ready!")
+	]]
 end
 
 
