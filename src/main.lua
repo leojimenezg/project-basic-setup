@@ -1,5 +1,5 @@
 -- Checks if a string is empty or consists only of whitespace characters.
-local function is_string_empty_blank(str)
+local function is_string_empty_or_blank(str)
 	if str == nil or str == "" then
 		return true
 	end
@@ -44,6 +44,7 @@ function Setup.parse_args(self)
 end
 
  --[[
+TODO: Update function logic.
 Validates if a given value is recognized as valid anywhere across the defined tables.
 Warning: This check does NOT ensure the value is appropriate for the specific option
 it's assigned to. Example: "--lng=all" passes if "all" is a globally valid value,
@@ -69,19 +70,24 @@ function Setup.is_value_allowed(self, value)
 end
 
 --[[
-Goes through each option's value, validates if its a valid value using the
+Goes through each option's value, validates if its allowed using the
 "is_value_allowed" function. It assigns a default value to an option if
-its value is missing or invalid.
+its value is missing or not allowed.
 --]]
 function Setup.check_opts_values(self)
 	for option, value in pairs(self.options) do
-		if is_string_empty_blank(value) then
+		if is_string_empty_or_blank(value) then
 			self.options[option] = self.default_values[option]
-		elseif option ~= "name" and option ~= "rte" then
+			--Skip to next iteration.
+			goto continue
+		end
+		if option ~= "name" and option ~= "rte" then
 			if not self.is_value_allowed(self, value) then
 				self.options[option] = self.default_values[option]
 			end
 		end
+		--Label to skip iteration code.
+		::continue::
 	end
 	return true
 end
@@ -198,8 +204,8 @@ end
 function Setup.init(self)
 	self:parse_args()
 	self:show_options()
+	self:check_opts_values()
 	--[[
-	self.check_opts_values(self)
 	self.create_project_dir(self)
 	self.create_project_docs(self)
 	print("Your Project Basic Setup is ready!")
