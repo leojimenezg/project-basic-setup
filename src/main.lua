@@ -99,20 +99,16 @@ function Setup.check_opts_values(self)
 end
 
 --[[
-Creates the full project path based on the provided path and name, and
-makes a format validation.
+Creates the full project path based on the values of "rte" and "nme" options.
 Warning: This function is specifically designed for Unix-like OS.
 ]]
 function Setup.create_project_path(self)
 	local base_path = self.options["rte"]
-	local project_name = self.options["name"]
-	local full_path
-	if base_path:sub(-1, -1) == '/' then
-		full_path = base_path .. project_name .. '/'
-	else
-		full_path = base_path .. '/' .. project_name .. '/'
+	local project_name = self.options["nme"]
+	if base_path:sub(-1, -1) ~= '/' then
+		base_path = base_path .. '/'
 	end
-	return full_path
+	return base_path .. project_name .. '/'
 end
 
 --[[
@@ -209,11 +205,7 @@ end
 -- Entry point to call subsequent functions to perform each necessary step.
 function Setup.init(self)
 	self:parse_args()
-	self:show_options()
-	print('\n')
 	self:check_opts_values()
-	self:show_options()
-	print('\n')
 	--[[
 	self.create_project_dir(self)
 	self.create_project_docs(self)
