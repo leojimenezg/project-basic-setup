@@ -13,10 +13,11 @@ end
 local Setup = {
 	-- Note: Due to how options are parsed, any new option added must be a string of exactly 3 characters long.
 	options = { nme = "", rte = "", lng = "", lic = "", dcs = "" },
-	default_values = { name = "new-project", rte = "./", lng = "lua", lic = "mit", dcs = "all" },
+	default_values = { name = "new-project", rte = "./", lng = "lua", lic = "mit", dcs = "all," },
 	languages = { python = "py", lua = "lua", cpp = "cpp", c = "c", go = "go" },
 	licenses = { mit = "mit", apache = "apache" },
 	documents = { readme = "README.md", license = "LICENSE", ignore = ".gitignore", all = "all" },
+	dcs_iterator_symbol = ',',
 }
 
 --[[
@@ -44,29 +45,39 @@ function Setup.parse_args(self)
 end
 
  --[[
-TODO: Update function logic.
-Validates if a given value is recognized as valid anywhere across the defined tables.
-Warning: This check does NOT ensure the value is appropriate for the specific option
-it's assigned to. Example: "--lng=all" passes if "all" is a globally valid value,
-even if "--lng" specifically expects a language name.
+Validates if a given value is recognized as valid in its corresponding table.
+The search process is based on the available options. Also, the validation of the
+"dcs" option value is different from the others as it can accept multiple values.
 ]]
-function Setup.is_value_allowed(self, value)
-	for lng, _ in pairs(self.languages) do
-		if lng == value then
-			return true
+function Setup.is_value_allowed(self, option, value)
+	if option == "lng" then
+		if self.languages[value] == nil then
+			return false
+		end
+	elseif option == "lic" then
+		if self.licenses[value] == nil then
+			return false
+		end
+	else
+		--Add a "dcs_iterator_symbol" at the end for a proper format if needed.
+		if value:sub(-1, -1) ~= self.dcs_iterator_symbol then
+			value = value .. self.dcs_iterator_symbol
+		end
+		local start = 1
+		local symbol_idx = value:find(self.dcs_iterator_symbol, start)
+		while symbol_idx do
+			local val = value:sub(start, symbol_idx - 1)
+			if self.documents[val] == nil then
+				return false
+			end
+			if symbol_idx + 1 > #value then
+				break
+			end
+			start = symbol_idx + 1
+			symbol_idx = value:find(self.dcs_iterator_symbol, start)
 		end
 	end
-	for lic, _ in pairs(self.licenses) do
-		if lic == value then
-			return true
-		end
-	end
-	for doc, _ in pairs(self.documents) do
-		if doc == value then
-			return true
-		end
-	end
-	return false
+	return true
 end
 
 --[[
@@ -78,16 +89,11 @@ function Setup.check_opts_values(self)
 	for option, value in pairs(self.options) do
 		if is_string_empty_or_blank(value) then
 			self.options[option] = self.default_values[option]
-			--Skip to next iteration.
-			goto continue
-		end
-		if option ~= "name" and option ~= "rte" then
-			if not self.is_value_allowed(self, value) then
+		elseif option ~= "nme" and option ~= "rte" then
+			if not self.is_value_allowed(self, option, value) then
 				self.options[option] = self.default_values[option]
 			end
 		end
-		--Label to skip iteration code.
-		::continue::
 	end
 	return true
 end
@@ -204,7 +210,10 @@ end
 function Setup.init(self)
 	self:parse_args()
 	self:show_options()
+	print('\n')
 	self:check_opts_values()
+	self:show_options()
+	print('\n')
 	--[[
 	self.create_project_dir(self)
 	self.create_project_docs(self)
