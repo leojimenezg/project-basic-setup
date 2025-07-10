@@ -90,7 +90,7 @@ function Setup.check_opts_values(self)
 		if is_string_empty_or_blank(value) then
 			self.options[option] = self.default_values[option]
 		elseif option ~= "nme" and option ~= "rte" then
-			if not self.is_value_allowed(self, option, value) then
+			if not self:is_value_allowed(option, value) then
 				self.options[option] = self.default_values[option]
 			end
 		end
@@ -100,7 +100,7 @@ end
 
 --[[
 Creates the full project path based on the values of "rte" and "nme" options.
-Warning: This function is specifically designed for Unix-like OS.
+Warning: Path specifically designed for Unix-like OS.
 ]]
 function Setup.create_project_path(self)
 	local base_path = self.options["rte"]
@@ -112,53 +112,61 @@ function Setup.create_project_path(self)
 end
 
 --[[
-Creates the main project directory and all the project directories
-based on the created project path using "mkdir -p" command.
+Creates the main project directory and subdirectories (/src, /tests, /assets/imgs, /assets/data)
+using mkdir commands. Handles paths with blank spaces using quotes in the command.
+Warning: Uses Unix-like commands (mkdir -p).
 ]]
-function Setup.create_project_dir(self)
-	local project_path = self.create_project_path(self)
-	-- Quotes are used to properly handle paths containing spaces.
-	local command = 'mkdir -p "' .. project_path .. '"'
-	os.execute(command)
-	return true
+function Setup.create_project_directories(self)
+	local project_path = self:create_project_path()
+	local commands = {
+		'mkdir -p "' .. project_path .. '"',
+		'mkdir "' .. project_path .. '/src"',
+		'mkdir "' .. project_path .. '/tests"',
+		'mkdir "' .. project_path .. '/assets"',
+		'mkdir "' .. project_path .. '/assets/imgs"',
+		'mkdir "' .. project_path .. '/assets/data"',
+	}
+	for i = 1, #commands do
+		os.execute(commands[i])
+	end
 end
 
 --[[
-Reads the content of the specified template file and returns its
-lines as a table. If it fails, returns nil.
+Reads the template file content and returns it as a table of strings.
+Templates path: "./templates/{template_name}.txt".
+License path: "./templates/license/{self.options["lic""]}.txt".
+Returns nil if file cannot be opened.
 ]]
 function Setup.get_template_content(self, template_name)
-	local template_path = "./templates/" .. template_name .. ".txt"
-	local template = io.open(template_path, 'r')
-	if template ~= nil then
-		local content = {}
-		for line in template:lines() do
-			if line:find("[project-name-placeholder]", 1, true) then
-				line = "# " .. self.options["name"]:gsub("[-_]", ' ')
-			end
-			table.insert(content, line)
-		end
-		template:close()
-		return content
+	local template_path = "./templates/" .. template_name
+	if template_name == "license" then
+		 template_path = template_path .. self.options["lic"]
 	end
-	return nil
+	template_path = template_path .. ".txt"
+	local template_file = io.open(template_path, 'r')
+	if template_file == nil then return nil end
+	local template_content = {}
+	for line in template_file:lines() do
+		template_content:insert(line)
+	end
+	template_file:close()
+	return template_content
 end
 
--- Generates and writes the specified file with the retrieved template content.
+--[[
+Creates a file at the specified path and writes the template content to it.
+Uses the "get_template_content" function to fetch the content.
+Returns early if template content fetch or file creation fails.
+]]
 function Setup.create_and_write_file(self, file_path, file_name)
-	local template_content
-	if file_name == "license" then
-		local license_name = file_name .. '/' .. self.options["lic"]
-		template_content = self.get_template_content(self, license_name)
-	else
-		template_content = self.get_template_content(self, file_name)
-	end
+	local template_content = self:get_template_content(file_name)
 	local file = io.open(file_path, "w")
-	for i = 1, #template_content do
-		file:write(template_content[i])
+	if template_content == nil or file == nil then return end
+	for line in template_content do
+		file:write(line)
 		file:write("\n")
 	end
-	return true
+	file:close()
 end
 
 -- Generates core project documents based on the provided configurations.
@@ -206,8 +214,8 @@ end
 function Setup.init(self)
 	self:parse_args()
 	self:check_opts_values()
+	self:create_project_directories()
 	--[[
-	self.create_project_dir(self)
 	self.create_project_docs(self)
 	print("Your Project Basic Setup is ready!")
 	]]
