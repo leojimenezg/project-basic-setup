@@ -48,6 +48,7 @@ end
 Validates if a given value is recognized as valid in its corresponding table.
 The search process is based on the available options. Also, the validation of the
 "dcs" option value is different from the others as it can accept multiple values.
+Beware: The "dcs" value is converted into a table where the keys are the multiple values.
 ]]
 function Setup.is_value_allowed(self, option, value)
 	if option == "lng" then
@@ -59,23 +60,26 @@ function Setup.is_value_allowed(self, option, value)
 			return false
 		end
 	else
-		--Add a "dcs_iterator_symbol" at the end for a proper format if needed.
+		--Add a "dcs_iterator_symbol" at the end to properly format it.
 		if value:sub(-1, -1) ~= self.dcs_iterator_symbol then
 			value = value .. self.dcs_iterator_symbol
 		end
 		local start = 1
 		local symbol_idx = value:find(self.dcs_iterator_symbol, start)
+		local dcs_value_table = {}
 		while symbol_idx do
-			local val = value:sub(start, symbol_idx - 1)
-			if self.documents[val] == nil then
+			local iteration_value = value:sub(start, symbol_idx - 1)
+			if self.documents[iteration_value] == nil then
 				return false
 			end
+			dcs_value_table[iteration_value] = true
 			if symbol_idx + 1 > #value then
 				break
 			end
 			start = symbol_idx + 1
 			symbol_idx = value:find(self.dcs_iterator_symbol, start)
 		end
+		self.options["dcs"] = dcs_value_table
 	end
 	return true
 end
@@ -134,20 +138,20 @@ end
 --[[
 Reads the template file content and returns it as a table of strings.
 Templates path: "./templates/{template_name}.txt".
-License path: "./templates/license/{self.options["lic""]}.txt".
+License path: "./templates/license/{self.options["lic"]}."txt".
 Returns nil if file cannot be opened.
 ]]
 function Setup.get_template_content(self, template_name)
 	local template_path = "./templates/" .. template_name
 	if template_name == "license" then
-		 template_path = template_path .. self.options["lic"]
+		 template_path = template_path .. '/' ..self.options["lic"]
 	end
 	template_path = template_path .. ".txt"
 	local template_file = io.open(template_path, 'r')
 	if template_file == nil then return nil end
 	local template_content = {}
 	for line in template_file:lines() do
-		template_content:insert(line)
+		table.insert(template_content, line)
 	end
 	template_file:close()
 	return template_content
@@ -160,53 +164,39 @@ Returns early if template content fetch or file creation fails.
 ]]
 function Setup.create_and_write_file(self, file_path, file_name)
 	local template_content = self:get_template_content(file_name)
-	local file = io.open(file_path, "w")
+	local file = io.open(file_path, 'w')
 	if template_content == nil or file == nil then return end
-	for line in template_content do
-		file:write(line)
-		file:write("\n")
+	for i = 1, #template_content do
+		file:write(template_content[i])
+		file:write('\n')
 	end
 	file:close()
 end
 
--- Generates core project documents based on the provided configurations.
--- This process executes in three distinct phases:
--- 1. Primary File Creation: Creates a main source file. Creation is skipped if the language provided is not supported.
--- 2. Single Document Creation: Creates a single, specified document. Creation is skipped if the document is not supported.
--- 3. Complete File Creation: Creates all the supported project files, only if provided by the configuration.
+--[[
+Creates main source file and project documents based on "dcs" configuration.
+Creates all documents if "all" is specified, otherwise only the specified ones.
+]]
 function Setup.create_project_docs(self)
 	local path = self.create_project_path(self)
-	local full_path
-	local main_file_language = self.languages[self.options["lng"]]
-	if main_file_language then
-		local main_file = "main." .. main_file_language
-		full_path = path .. main_file
-		local command = 'touch "' .. full_path .. '"'
-		os.execute(command)
-	end
-	local dcs_value = self.options["dcs"]
-	if dcs_value ~= "all" then
-		local document_name = self.documents[document]
-		if document_name then
-			full_path = path .. document_name
-			self.create_and_write_file(self, full_path, document_name)
-			return true
-		else
-			return false
+	--Main file.
+	local main_file_path = path .. "/src/main." .. self.languages[self.options["lng"]]
+	os.execute('touch "' .. main_file_path .. '"')
+	--Extra files.
+	local extra_files = self.options["dcs"]
+	if type(extra_files) ~= "table" then return end
+	if extra_files["all"] == nil then
+		for file, _ in pairs(extra_files) do
+			local file_path = path .. self.documents[file]
+			self:create_and_write_file(file_path, file)
 		end
+		return
 	end
-	for document, document_name in pairs(self.documents) do
-		if document ~= "all" then
-			full_path = path .. document_name
-			self.create_and_write_file(self, full_path, document)
+	for file, _ in pairs(self.documents) do
+		if file ~= "all" then
+			local file_path = path .. self.documents[file]
+			self:create_and_write_file(file_path, file)
 		end
-	end
-	return true
-end
-
-function Setup.show_options(self)
-	for key, value in pairs(self.options) do
-		print(key .. " -> " .. value)
 	end
 end
 
@@ -215,10 +205,8 @@ function Setup.init(self)
 	self:parse_args()
 	self:check_opts_values()
 	self:create_project_directories()
-	--[[
-	self.create_project_docs(self)
+	self:create_project_docs()
 	print("Your Project Basic Setup is ready!")
-	]]
 end
 
 
