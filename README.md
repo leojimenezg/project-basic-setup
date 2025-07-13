@@ -15,7 +15,7 @@ Before anything else, make sure you have installed **Lua 5.x.x** or a newer vers
 1. **Clone the repository:**
 Open your prefered terminal and clone the project to your local machine.
     ```bash
-    git clone https://github.com/LeoJimenezG/project-basic-setup.git
+    git clone https://github.com/leojimenezg/project-basic-setup.git
     ```
 2. **Navigate into the project directory:**
     ```bash
